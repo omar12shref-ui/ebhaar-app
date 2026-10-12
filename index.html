@@ -672,6 +672,7 @@ button:not(.justify-between) { text-justify: center; justify-content: center !im
   function status(kind, text) {
     if (!pill) { pill = document.createElement('div'); pill.id = 'ebhaarSyncPill'; pill.style.cssText = 'position:fixed;bottom:10px;right:10px;z-index:9000;font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;box-shadow:0 2px 8px rgba(0,0,0,.15);direction:rtl'; document.body.appendChild(pill); }
     const col = { ok: ['#ecfdf5', '#047857'], busy: ['#fffbeb', '#b45309'], err: ['#fef2f2', '#b91c1c'] }[kind]; pill.style.background = col[0]; pill.style.color = col[1]; pill.textContent = text; pill.dataset.k = kind;
+    C.statusKind = kind; C.statusText = text; try { window.dispatchEvent(new CustomEvent('ebhaar-sync', { detail: { kind, text } })); } catch (e) { }
   }
   function conflict() {
     C.conflict = true; status('err', '⚠ تعارض');
@@ -11307,6 +11308,41 @@ html header.v10-top input{background:transparent!important}
 body.v12-role-registrar #v10TopBackup { display: none !important; }
 body.v12-role-registrar .action-edit, body.v12-role-registrar .action-delete, body.v12-role-viewer .action-edit, body.v12-role-viewer .action-delete { display: none !important; }
 
+/* ===== V13: الهيدر المعاد تصميمه ===== */
+#v12RoleSel, #cloudUser, #ebhaarSyncPill { display: none !important; }
+header.hd-ready { gap: 14px; }
+header.hd-ready .hd-start { gap: 10px; }
+.hd-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.hd-center { flex: 1; justify-content: center; min-width: 0; }
+.hd-center > .hidden { flex: 1; max-width: 520px; }
+.hd-center input { width: 100% !important; }
+.hd-user { display: flex; align-items: center; gap: 9px; height: 42px; padding: 0 12px 0 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,.28); background: rgba(255,255,255,.1); color: #fff; cursor: pointer; flex-shrink: 0 }
+.hd-user:hover { background: rgba(255,255,255,.18) }
+.hd-av { width: 28px; height: 28px; border-radius: 50%; background: #e6b84a; color: var(--deep-blue); font-weight: 800; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0 }
+.hd-ut { display: flex; flex-direction: column; line-height: 1.2; text-align: right; max-width: 130px }
+.hd-ut b { font-size: 12.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.hd-ut small { font-size: 10.5px; opacity: .8 }
+.hd-conn { display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border-radius: 999px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); color: #fff; font-size: 11.5px; font-weight: 700; white-space: nowrap; flex-shrink: 0 }
+.hd-conn i { width: 9px; height: 9px; border-radius: 50%; background: #3fb98a; flex-shrink: 0 }
+.hd-conn[data-k="ok"] i { box-shadow: 0 0 0 3px rgba(63,185,138,.25) }
+.hd-conn[data-k="busy"] i { background: #e6b84a; animation: hdp 1s infinite }
+.hd-conn[data-k="err"] { border-color: #ef5a4c; background: rgba(239,90,76,.22) }
+.hd-conn[data-k="err"] i { background: #ef5a4c }
+.hd-conn[data-k="local"] { border-color: rgba(230,184,74,.7); color: #f3d487 }
+.hd-conn[data-k="local"] i { background: #e6b84a }
+@keyframes hdp { 50% { opacity: .3 } }
+.hd-menu { position: absolute; top: 50px; right: 0; width: 270px; background: var(--dx-card,#fff); color: var(--dx-ink,#1b2733); border: 1px solid var(--dx-line,#e6e0d6); border-radius: 14px; box-shadow: 0 18px 40px -16px rgba(20,48,79,.45); padding: 8px; z-index: 80 }
+.hd-menu.hidden { display: none }
+.hd-mh { padding: 8px 10px 10px; border-bottom: 1px solid var(--dx-line,#e6e0d6); margin-bottom: 6px }
+.hd-mh b { display: block; font-size: 14px } .hd-mh span { font-size: 11.5px; opacity: .7; word-break: break-all }
+.hd-ms { font-size: 11px; opacity: .6; padding: 6px 10px 2px }
+.hd-mi { display: block; width: 100%; text-align: right; padding: 9px 10px; border-radius: 9px; border: 0; background: transparent; color: inherit; font-size: 13px; font-weight: 600; cursor: pointer }
+.hd-mi:hover { background: rgba(127,127,127,.12) } .hd-mi.on { background: rgba(30,58,95,.12) }
+.hd-out { color: #b91c1c }
+.hd-note { font-size: 12px; padding: 8px 10px; opacity: .85; line-height: 1.7 }
+@media (max-width: 1023px) { .hd-ut, .hd-user > svg { display: none } .hd-user { padding: 0 6px; height: 38px } }
+@media (max-width: 767px) { .hd-conn span { display: none } .hd-conn { padding: 0 9px } header.hd-ready { gap: 8px } .hd-menu { right: auto; left: 0 } }
+
   </style>
   <script id="ebhaar-v7-js">
 // ===================== V7: أماكن وجود البضاعة + تفعيل/تعطيل وحدات الفائض والمحجوزات =====================
@@ -14328,21 +14364,6 @@ try { v11Ensure(state); syncAllJournal(state); recalculateTreasuryBalances(); } 
   window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { if (C.needsInitialUpload) { try { saveState(); } catch (e) { console.error(e); } } }, 800);
   });
-  let tries = 0;
-  const t = setInterval(() => {
-    tries++;
-    const bell = document.getElementById('v10Bell');
-    const sel = document.getElementById('v12RoleSel');
-    if (sel) sel.style.display = 'none';          // الدور حقيقي من السيرفر، لا تبديل
-    if (bell && !document.getElementById('cloudUser')) {
-      const b = document.createElement('button'); b.id = 'cloudUser'; b.type = 'button';
-      b.style.cssText = 'background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer';
-      b.textContent = (C.user.name || C.user.email) + ' · خروج'; b.title = 'تسجيل الخروج';
-      b.onclick = () => C.logout();
-      bell.parentElement.insertBefore(b, bell);
-    }
-    if ((bell && sel) || tries > 40) clearInterval(t);
-  }, 250);
 })();
 // ============================================================
 // V13 — نقل بضاعة بين المخازن/الأماكن (دفتر الأستاذ لا يتغير: كلها داخل 1310 مخازن الشركة)
@@ -14408,6 +14429,63 @@ function v13TransferSave(e) {
     b.className = 'nav-btn w-full text-right px-3 py-2 text-xs text-stone-600 hover:bg-stone-200/80 rounded-lg';
     b.setAttribute('onclick', 'v13OpenTransfer()'); b.textContent = 'نقل بين المخازن'; sub.appendChild(b);
   }
+})();
+// ============================================================
+// V13 — إعادة تصميم الهيدر: مجموعات واضحة + حالة الاتصال الحقيقية + قائمة المستخدم (بدل قائمة الدور التجريبية)
+//   يمين: ☰ + المستخدم + حالة الاتصال | وسط: البحث | يسار: نسخة احتياطية + الجرس + الشعار
+// - حالة الاتصال: «متصل بالسيرفر» فقط لو مربوط فعلاً، وإلا «تخزين محلي فقط — غير مربوط» (لا نقطة خضراء كاذبة)
+// - تبديل الدور التجريبي لا يظهر إلا مع ?sim في الرابط (للاختبار المحلي)
+// ============================================================
+(function () {
+  const C = window.EBHAAR_CLOUD;
+  const cloud = !!(C && C.user && !C.blocked);
+  const sim = /[?&]sim\b/.test(location.search);
+  let tries = 0;
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function roleInfo() { if (cloud) return { role: C.role, name: C.user.name || C.user.email, label: V12_ROLES[C.role] || C.role }; const r = v12Role(); return { role: r.role, name: r.name, label: r.name }; }
+  function chipHtml() { const r = roleInfo(); const ini = (r.name || '؟').trim().charAt(0); return `<span class="hd-av">${esc(ini)}</span><span class="hd-ut"><b>${esc(r.name)}</b><small>${esc(cloud ? r.label : 'وضع محلي')}</small></span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>`; }
+  function menuHtml() {
+    const r = roleInfo(); let h = `<div class="hd-mh"><b>${esc(r.name)}</b><span>${esc(cloud ? r.label + ' — ' + (C.user.email || '') : 'نسخة محلية: البيانات على هذا المتصفح فقط')}</span></div>`;
+    if (sim && !cloud) h += '<div class="hd-ms">تبديل الدور (تجريبي محلي)</div>' + Object.keys(V12_ROLES).map(k => `<button type="button" class="hd-mi ${k === r.role ? 'on' : ''}" onclick="hdSetRole('${k}')">${V12_ROLES[k]}</button>`).join('');
+    if (cloud) h += '<button type="button" class="hd-mi hd-out" onclick="EBHAAR_CLOUD.logout()">تسجيل الخروج</button>';
+    else h += '<div class="hd-note">غير مربوط بالسيرفر. افتح رابط الموقع مع <b dir="ltr">?setup</b> مرة واحدة لربطه.</div>';
+    return h;
+  }
+  window.hdSetRole = k => { v12SetRole(k); hdClose(); const u = document.getElementById('hdUser'); if (u) u.innerHTML = chipHtml(); };
+  function hdClose() { const m = document.getElementById('hdMenu'); if (m) m.classList.add('hidden'); }
+  function paintStatus() {
+    const el = document.getElementById('hdConn'); if (!el) return;
+    let kind, text, tip;
+    if (cloud) { kind = C.statusKind || 'ok'; text = kind === 'ok' ? 'متصل بالسيرفر' : (C.statusText || '').replace(/^[✓⚠]\s*/, '') || 'جارٍ الحفظ…'; tip = kind === 'ok' ? 'كل التعديلات محفوظة على السيرفر' + (C.lastSaved ? ' — آخر حفظ ' + new Date(C.lastSaved).toLocaleTimeString('en-GB').slice(0, 5) : '') : kind === 'busy' ? 'جارٍ إرسال آخر تعديل للسيرفر' : 'تعذّر الحفظ على السيرفر — يُعاد المحاولة تلقائيًا'; }
+    else { kind = 'local'; text = 'تخزين محلي فقط'; tip = 'هذه النسخة غير مربوطة بالسيرفر: البيانات على هذا المتصفح فقط. افتح الرابط مع ?setup لربطها.'; }
+    el.dataset.k = kind; el.title = tip; el.querySelector('span').textContent = text;
+  }
+  function build() {
+    const header = document.querySelector('header'); const bell = document.getElementById('v10Bell'), bk = document.getElementById('v10TopBackup');
+    if (!header || !bell || !bk || document.getElementById('hdUser')) return !!document.getElementById('hdUser');
+    const leftGrp = header.children[2], logoGrp = header.children[0], centerGrp = header.children[1]; if (!leftGrp) return false;
+    // الاتصال: نبني شارة جديدة بدل النقطة الخضراء الثابتة
+    const old = header.querySelector('.v10-conn'); if (old) old.remove();
+    const conn = document.createElement('div'); conn.id = 'hdConn'; conn.className = 'hd-conn'; conn.innerHTML = '<i></i><span></span>';
+    const user = document.createElement('button'); user.type = 'button'; user.id = 'hdUser'; user.className = 'hd-user'; user.innerHTML = chipHtml();
+    const wrap = document.createElement('div'); wrap.style.position = 'relative'; wrap.className = 'hd-uw';
+    const menu = document.createElement('div'); menu.id = 'hdMenu'; menu.className = 'hd-menu hidden';
+    user.onclick = ev => { ev.stopPropagation(); menu.innerHTML = menuHtml(); menu.classList.toggle('hidden'); };
+    menu.onclick = ev => ev.stopPropagation(); document.addEventListener('click', hdClose);
+    wrap.appendChild(user); wrap.appendChild(menu);
+    // اليمين: ☰ + المستخدم + الحالة
+    leftGrp.classList.add('hd-start'); leftGrp.appendChild(wrap); leftGrp.appendChild(conn);
+    // اليسار: نسخة احتياطية + الجرس ثم الشعار
+    const act = document.createElement('div'); act.id = 'hdActions'; act.className = 'hd-actions';
+    act.appendChild(bk); act.appendChild(bell.parentElement);
+    header.insertBefore(act, logoGrp); act.style.order = '3'; if (logoGrp) logoGrp.style.order = '4';
+    if (centerGrp) centerGrp.classList.add('hd-center');
+    header.classList.add('hd-ready');
+    paintStatus(); return true;
+  }
+  window.addEventListener('ebhaar-sync', paintStatus);
+  const t = setInterval(() => { tries++; if (build() || tries > 60) clearInterval(t); }, 250);
+  setInterval(paintStatus, 4000);
 })();
 
   </script>
