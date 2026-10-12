@@ -580,7 +580,7 @@ button:not(.justify-between) { text-justify: center; justify-content: center !im
 // ============================================================
 (function () {
   const KEY = 'EBHAAR_SYSTEM_STATE_V4_FINAL', CFG_K = 'EBHAAR_CLOUD_CFG_V1', SES_K = 'EBHAAR_SB_SESSION_V1', ROLE_K = 'EBHAAR_SIM_ROLE_V1';
-  const EMBED = { url: '', key: '' };   // يُملأ عند النشر؛ أو يُحفظ من شاشة الإعداد (?setup)
+  const EMBED = { url: 'https://ifntwmpwqiqewdvxksds.supabase.co', key: 'sb_publishable_OicpoVEzYGgfr-bI6Klcag_4THYfS8c' };   // يُملأ عند النشر؛ أو يُحفظ من شاشة الإعداد (?setup)
   window.EBHAAR_CLOUD = null;
   const L = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) { } }, del: k => { try { localStorage.removeItem(k); } catch (e) { } } };
   let cfg = null; try { cfg = JSON.parse(L.get(CFG_K) || 'null'); } catch (e) { }
