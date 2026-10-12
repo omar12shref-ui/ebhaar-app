@@ -617,6 +617,7 @@ button:not(.justify-between) { text-justify: center; justify-content: center !im
   function getSes() { try { return JSON.parse(L.get(SES_K) || 'null'); } catch (e) { return null; } }
   function putSes(s) { if (s && s.access_token) L.set(SES_K, JSON.stringify({ access_token: s.access_token, refresh_token: s.refresh_token, expires_at: s.expires_at, user: s.user })); }
   function clearAll() { L.del(SES_K); L.del(KEY); L.del(ROLE_K); }
+  C.verifyPassword = function (pw) { if (!C.user || !C.user.email || !pw) return false; const r = xhr('POST', '/auth/v1/token?grant_type=password', { email: C.user.email, password: pw }); return r.status === 200 && !!(r.json && r.json.access_token); };
   C.logout = function () { const go = () => { clearAll(); location.reload(); }; if (C.pending != null || C.inflight) { if (!confirm('يوجد تعديل لم يُرسل بعد للسيرفر. الخروج الآن سيفقده. هل تخرج؟')) return; } go(); };
 
   function loginGate(msg) {
@@ -2711,6 +2712,7 @@ button:not(.justify-between) { text-justify: center; justify-content: center !im
                 <span class="font-bold text-blue-900">تنزيل نسخة احتياطية من بياناتي الحالية قبل الاستبدال (موصى به)</span>
               </label>
               <p class="text-rose-700 font-bold">لا يمكن التراجع عن الاستبدال إلا بالرجوع إلى نسخة احتياطية.</p>
+              ${(window.EBHAAR_CLOUD && window.EBHAAR_CLOUD.user) ? `<div class="bg-rose-50 border border-rose-200 rounded-xl p-3 space-y-1.5"><label class="font-bold text-rose-800 block">أدخل كلمة مرور حسابك لتأكيد الاسترداد</label><input type="password" id="importPw" autocomplete="current-password" class="w-full p-2 border border-rose-300 rounded-lg text-sm" dir="ltr"><p id="importPwErr" class="text-rose-700 font-bold hidden"></p></div>` : ''}
             </div>
             <div class="p-4 bg-stone-50 border-t border-stone-200 flex justify-end gap-2">
               <button type="button" onclick="cancelImport()" class="px-4 py-2 bg-stone-200 text-stone-700 text-xs font-bold rounded-xl hover:bg-stone-300">إلغاء</button>
@@ -2727,6 +2729,15 @@ button:not(.justify-between) { text-justify: center; justify-content: center !im
 
     function confirmImport() {
       if (!pendingImport) return;
+      const CL = window.EBHAAR_CLOUD;
+      if (CL && CL.user) {
+        const errEl = document.getElementById('importPwErr');
+        const fail = (t) => { if (errEl) { errEl.textContent = t; errEl.classList.remove('hidden'); } else alert(t); };
+        if (CL.role !== 'admin') { fail('استرداد النسخة الاحتياطية متاح لمدير النظام فقط.'); return; }
+        const pw = (document.getElementById('importPw') || {}).value || '';
+        if (!pw) { fail('اكتب كلمة المرور أولاً.'); return; }
+        if (!CL.verifyPassword(pw)) { fail('كلمة المرور غير صحيحة. لم يتم تغيير أي بيانات.'); return; }
+      }
       const { fileName, result } = pendingImport;
       const backupFirst = !!(document.getElementById('importBackupFirst') || {}).checked;
 
@@ -2797,16 +2808,6 @@ button:not(.justify-between) { text-justify: center; justify-content: center !im
       logAudit('إعادة ضبط الإعدادات', 'تمت إعادة كل الإعدادات إلى الوضع الافتراضي');
       refreshCurrentView();
       notifyUser('تمت إعادة ضبط الإعدادات بنجاح', 'success');
-    }
-
-    function clearLocalData() {
-      if (!confirm('تحذير: سيؤدي هذا إلى حذف جميع بيانات النظام المخزنة على هذا الجهاز نهائياً (العملاء، العقود، المشتريات، كل شيء) ولا يمكن التراجع عن ذلك. هل قمت بتصدير نسخة احتياطية أولاً؟ اضغط "موافق" للمتابعة والحذف النهائي.')) return;
-      if (!confirm('تأكيد أخير: هذا الإجراء نهائي ولا رجعة فيه. هل أنت متأكد تماماً؟')) return;
-      try {
-        EBHAAR_STORE.remove();
-        localStorage.removeItem('EBHAAR_SIDEBAR_COLLAPSED');
-      } catch (e) {}
-      location.reload();
     }
 
     function logAudit(action, details) {
@@ -8791,13 +8792,6 @@ button:not(.justify-between) { text-justify: center; justify-content: center !im
                 <p class="text-[10px] text-stone-400">استعادة المظهر واللغة والتفضيلات فقط (بدون حذف بيانات الأعمال)</p>
               </div>
               <button type="button" onclick="resetApplicationPreferences()" class="px-3 py-2 bg-stone-200 hover:bg-stone-300 text-stone-700 rounded-xl text-[11px] font-bold flex items-center gap-1.5"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> إعادة ضبط</button>
-            </div>
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="font-bold text-rose-700">مسح كل البيانات المحلية</p>
-                <p class="text-[10px] text-stone-400">حذف نهائي لكل بيانات النظام المخزنة على هذا الجهاز (لا يمكن التراجع)</p>
-              </div>
-              <button type="button" onclick="clearLocalData()" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-[11px] font-bold flex items-center gap-1.5"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i> مسح البيانات</button>
             </div>
             <div class="pt-2 border-t border-stone-100 text-center text-[10px] text-stone-400">
               نظام إدارة تركيبات المصاعد — الإصدار ${APP_VERSION}
